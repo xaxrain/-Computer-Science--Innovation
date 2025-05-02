@@ -310,6 +310,25 @@ svg {
   vertical-align: middle;
 }
 
+
+.social-icon img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.social-icon img:hover {
+  transform: scale(1.1);
+}
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+
 table {
   caption-side: bottom;
   border-collapse: collapse;
