@@ -324,8 +324,11 @@ svg {
 
 .social-icons {
   display: flex;
-  gap: 15 px;
+  flex-wrap: wrap;       /* enables wrapping */
+  gap: 30px; /* applies both row and column spacing */
+
   align-items: center;
+  margin-bottom: 40px;
 }
 
 .icon-label {
