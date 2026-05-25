@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Interactive Chinese Flashcards — Occupations</title>
+  <style>
+    :root{
+      --bg:#f7f9fc; --card-bg:#ffffff; --accent:#3f6fc0; --muted:#555; --radius:12px;
+      --shadow: 0 6px 18px rgba(29,41,61,0.08);
+      --card-w:260px; --card-h:320px;
+    }
+    html,body{height:100%;}
+    body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:var(--bg); color:#111; display:flex; align-items:flex-start; justify-content:center; padding:32px;}
+    .app{max-width:1100px;width:100%}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    header h1{font-size:18px;margin:0;color:var(--muted)}
+    .controls{display:flex;gap:10px;align-items:center}
+    .btn{background:var(--card-bg);border:1px solid rgba(20,30,60,0.06);padding:8px 12px;border-radius:8px;cursor:pointer;box-shadow:var(--shadow);font-weight:600}
+    .btn.ghost{background:transparent}
+    .toggle{display:inline-flex;align-items:center;gap:8px}
+
+    .grid{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+    .card{width:var(--card-w);height:var(--card-h);perspective:1200px}
+    .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.2,.9,.25,1)}
+    .card.flip .inner{transform:rotateY(180deg)}
+    .side{position:absolute;inset:0;border-radius:var(--radius);backface-visibility:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:var(--shadow);background:var(--card-bg);border:1px solid rgba(20,30,60,0.06)}
+    .front{padding:22px}
+    .back{transform:rotateY(180deg);padding:22px}
+    .han{font-size:44px;font-weight:700;margin-bottom:10px}
+    .pinyin{font-size:16px;color:var(--muted);margin-bottom:12px}
+    .eng{font-size:20px;color:var(--accent);font-weight:700}
+
+    .controls-row{width:100%;display:flex;align-items:center;justify-content:space-between;margin-top:18px}
+    .small{font-size:13px;color:var(--muted)}
+
+    footer{margin-top:18px;font-size:13px;color:var(--muted)}
+
+    /* responsive */
+    @media (max-width:900px){
+      .grid{justify-content:center}
+      body{padding:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Interactive Flashcards — Occupations (Chinese ↔ English)</h1>
+      <div class="controls">
+        <label class="toggle small"><input id="showPinyin" type="checkbox" checked /> Show pinyin</label>
+        <button class="btn" id="shuffleBtn">Shuffle</button>
+        <button class="btn" id="resetBtn">Reset Order</button>
+        <button class="btn" id="downloadBtn">Download HTML</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="grid" id="grid"></div>
+
+      <div class="controls-row">
+        <div class="small">Click a card to flip. Use Shuffle to randomize order.</div>
+        <div>
+          <button class="btn" id="flipAll">Flip All</button>
+          <button class="btn ghost" id="unflipAll">Unflip All</button>
+        </div>
+      </div>
+
+    </main>
+
+    <footer>
+      Tip: You can edit the list in the source to add more flashcards. Click Download HTML to save a standalone copy.
+    </footer>
+  </div>
+
+  <script>
+    // cards data (from the image)
+    const cardsData = [
+      {han: '医生', pinyin: 'yīshēng', eng: 'doctor', img: 'https://api.iconify.design/openmoji:woman-health-worker.svg?height=150'},
+      {han: '画家', pinyin: 'huàjiā', eng: 'artist', img: 'https://api.iconify.design/openmoji:artist.svg?height=150'},
+      {han: '工程师', pinyin: 'gōngchéngshī', eng: 'engineer', img: 'https://api.iconify.design/openmoji:technologist.svg?height=150'},
+      {han: '教师', pinyin: 'jiàoshī', eng: 'teacher', img: 'https://api.iconify.design/openmoji:teacher.svg?height=150'},
+      {han: '商人', pinyin: 'shāngrén', eng: 'businessman', img: 'https://api.iconify.design/openmoji:office-worker.svg?height=150'},
+      {han: '工人', pinyin: 'gōngrén', eng: 'worker', img: 'https://api.iconify.design/openmoji:construction-worker.svg?height=150'}
+    ];
+
+    let state = {items: [...cardsData], showPinyin:true};
+
+    const grid = document.getElementById('grid');
+    const showPinyinCheckbox = document.getElementById('showPinyin');
+
+    function createCard(item, idx){
+      const wrap = document.createElement('div'); wrap.className='card'; wrap.dataset.index=idx;
+      const inner = document.createElement('div'); inner.className='inner';
+
+      const front = document.createElement('div'); front.className='side front';
+      const img = document.createElement('img'); img.src = item.img; img.style.width = '120px'; img.style.height = '120px'; img.style.objectFit = 'cover'; img.style.borderRadius = '8px'; img.style.marginBottom = '12px';
+      front.appendChild(img);
+      const han = document.createElement('div'); han.className='han'; han.textContent = item.han;
+      const pinyin = document.createElement('div'); pinyin.className='pinyin'; pinyin.textContent = item.pinyin;
+      const label = document.createElement('div'); label.className='small'; label.textContent='Click to flip';
+      front.appendChild(han); front.appendChild(pinyin); front.appendChild(label);
+
+      const back = document.createElement('div'); back.className='side back';
+      const eng = document.createElement('div'); eng.className='eng'; eng.textContent = item.eng;
+      back.appendChild(eng);
+
+      inner.appendChild(front); inner.appendChild(back);
+      wrap.appendChild(inner);
+
+      // click to flip
+      wrap.addEventListener('click', (e)=>{
+        wrap.classList.toggle('flip');
+      });
+
+      // show/hide pinyin
+      if(!state.showPinyin) pinyin.style.display='none';
+
+      return wrap;
+    }
+
+    function render(){
+      grid.innerHTML='';
+      state.items.forEach((it,i)=> grid.appendChild(createCard(it,i)));
+    }
+
+    render();
+
+    // controls
+    showPinyinCheckbox.addEventListener('change', ()=>{
+      state.showPinyin = showPinyinCheckbox.checked;
+      document.querySelectorAll('.pinyin').forEach(el=> el.style.display = state.showPinyin ? '' : 'none');
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', ()=>{
+      state.items = shuffleArray(state.items);
+      render();
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{ state.items = [...cardsData]; render(); });
+    document.getElementById('flipAll').addEventListener('click', ()=>{ document.querySelectorAll('.card').forEach(c=> c.classList.add('flip')); });
+    document.getElementById('unflipAll').addEventListener('click', ()=>{ document.querySelectorAll('.card').forEach(c=> c.classList.remove('flip')); });
+
+    document.getElementById('downloadBtn').addEventListener('click', ()=>{
+      const html = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset=\"utf-8\"/>\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/>\n<title>Flashcards Export</title>\n<style>body{font-family:Arial,Helvetica,sans-serif;padding:20px;background:#f7f9fc} .card{width:260px;height:320px;border-radius:12px;border:1px solid rgba(20,30,60,0.06);display:inline-block;margin:12px;vertical-align:top;text-align:center;padding:24px;background:#fff;box-shadow:0 6px 18px rgba(29,41,61,0.08)}.han{font-size:44px;font-weight:700}.pinyin{color:#666;margin-top:8px}.eng{color:#2f5fb6;font-weight:700;margin-top:20px}</style>\n</head>\n<body>\n` + state.items.map(it=>`<div class=\"card\"><div class=\"han\">${it.han}</div><div class=\"pinyin\">${it.pinyin}</div><div class=\"eng\">${it.eng}</div></div>`).join('\n') + "\n</body>\n</html>";
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='chinese-flashcards.html'; a.click(); URL.revokeObjectURL(url);
+    });
+
+    // util: fisher-yates
+    function shuffleArray(a){
+      const arr = a.slice(); for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]} return arr;
+    }
+  </script>
+</body>
+</html>
